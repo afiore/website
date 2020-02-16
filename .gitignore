@@ -4,6 +4,6 @@ node_modules
 .idea
 .metals
 project/metals.sbt
-website/build
 website/blog
+website/build
 *~

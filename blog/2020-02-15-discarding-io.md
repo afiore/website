@@ -204,7 +204,7 @@ taking an optimistic approach and deems a test successful unless at least one of
 
 ## Conclusions: avoid a double facepalm!
 
-![double facepalm meme](/img/posts/double-facepalm.jpg)
+![double facepalm meme](/website/img/posts/double-facepalm.jpg)
 
 I have become aware of value discarding a while back, through an [excellent post](https://underscore.io/blog/posts/2016/11/24/value-discard.html) 
 by Richard Dallaway. A few years later, this arguably strange behaviour is still the default for both Scala2 and Dotty. 
@@ -225,4 +225,3 @@ The other, perhaps bit more obvious piece of wisdom I feel like sharing (also as
 trust blindly a green Scalatest suite. It is always a good idea to satisfy yourself that your assertions fail when you explicitly
 break your implementation. While I learn more on how to best [automate this process](https://en.wikipedia.org/wiki/Mutation_testing),
 ensuring that this verification is carried out will be a matter of discipline and habit.
-
