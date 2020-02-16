@@ -1,0 +1,13 @@
+--2020-02-16 21:41:09--  https://i.stack.imgur.com/jiFfM.jpg
+Loaded CA certificate '/etc/ssl/certs/ca-certificates.crt'
+Resolving i.stack.imgur.com (i.stack.imgur.com)... 104.16.0.35, 104.16.25.34, 104.16.26.34, ...
+Connecting to i.stack.imgur.com (i.stack.imgur.com)|104.16.0.35|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 68233 (67K) [image/jpeg]
+Saving to: ‘jiFfM.jpg’
+
+     0K .......... .......... .......... .......... .......... 75% 8.10M 0s
+    50K .......... ......                                     100% 5.28M=0.009s
+
+2020-02-16 21:41:09 (7.15 MB/s) - ‘jiFfM.jpg’ saved [68233/68233]
+
