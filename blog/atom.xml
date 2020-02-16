@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://afiore.github.io/websiteblog</id>
+    <title>Unfold Blog</title>
+    <updated>2020-02-15T06:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://afiore.github.io/websiteblog"/>
+    <subtitle>The best place to stay up-to-date with the latest Unfold news and events.</subtitle>
+    <logo>https://afiore.github.io/websiteimg/favicon.ico</logo>
+    <rights>Copyright © 2020 Your Name or Your Company Name</rights>
+    <entry>
+        <title type="html"><![CDATA[Discarded effects: a common pitfall when working with Scala IO monads]]></title>
+        <id>https://afiore.github.io/websiteblog/2020/02/15/discarding-io.html</id>
+        <link href="https://afiore.github.io/websiteblog/2020/02/15/discarding-io.html"/>
+        <updated>2020-02-15T06:00:00.000Z</updated>
+        <summary type="html"><![CDATA[<p>One thing that I would be certainly missing if I was to drop Scala in favor of another programming language is a mechanism to suspend the execution of side effects.</p> <p>This programming technique is available in Scala thanks to the popular <a href="https://typelevel.org/cats-effect/">Cats Effects</a> l...</p>]]></summary>
+        <author>
+            <name>Andrea Fiore</name>
+            <email/>
+            <uri>http://twitter.com/afiore</uri>
+        </author>
+    </entry>
+</feed>

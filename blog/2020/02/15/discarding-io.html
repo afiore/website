@@ -1,0 +1,228 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Discarded effects: a common pitfall when working with Scala IO monads · Unfold</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="One thing that I would be certainly missing if I was to drop Scala in favor of another programming language is a "/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Discarded effects: a common pitfall when working with Scala IO monads · Unfold"/><meta property="og:type" content="website"/><meta property="og:url" content="https://afiore.github.io/websiteblog/2020/02/15/discarding-io"/><meta property="og:description" content="One thing that I would be certainly missing if I was to drop Scala in favor of another programming language is a "/><meta name="twitter:card" content="summary"/><link rel="shortcut icon" href="/websiteimg/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><link rel="alternate" type="application/atom+xml" href="https://afiore.github.io/website/blog/atom.xml" title="Unfold Blog ATOM Feed"/><link rel="alternate" type="application/rss+xml" href="https://afiore.github.io/website/blog/feed.xml" title="Unfold Blog RSS Feed"/><script src="/websitejs/scrollSpy.js"></script><link rel="stylesheet" href="/websitecss/main.css"/><script src="/websitejs/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/website"><img class="logo" src="/websiteimg/favicon.ico" alt="Unfold"/><h2 class="headerTitleWithLogo">Unfold</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/websitedocs/about" target="_self">About me</a></li><li class="siteNavGroupActive"><a href="/websiteblog/" target="_self">Blog</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Recent Posts</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Recent Posts</h3><ul class=""><li class="navListItem navListItemActive"><a class="navItem" href="/websiteblog/2020/02/15/discarding-io">Discarded effects: a common pitfall when working with Scala IO monads</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer postContainer blogContainer"><div class="wrapper"><div class="lonePost"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle"><a href="/websiteblog/2020/02/15/discarding-io">Discarded effects: a common pitfall when working with Scala IO monads</a></h1><p class="post-meta">February 15, 2020</p><div class="authorBlock"><p class="post-authorName"><a href="http://twitter.com/afiore" target="_blank" rel="noreferrer noopener">Andrea Fiore</a></p></div></header><div><span><p>One thing that I would be certainly missing if I was to drop Scala in favor of another programming language is a
+mechanism to suspend the execution of side effects.</p>
+<p>This programming technique is available in Scala thanks to the popular <a href="https://typelevel.org/cats-effect/">Cats Effects</a> library
+as well some other alternative implementations such as <a href="https://monix.io/">Monix</a> or <a href="https://zio.dev/">ZIO</a>.</p>
+<h2><a class="anchor" aria-hidden="true" id="why-using-an-effect-system"></a><a href="#why-using-an-effect-system" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Why using an effect system</h2>
+<p>I find myself reaching out to Cats' IO monad for two main reasons:</p>
+<ul>
+<li><p><em>It allows to clearly tell apart the bits of program logic that perform side effects from the ones that do not</em>
+(e.g. issuing an RPC call vs sorting the items of a list). I find this reassuring: I am aware that I cannot be
+fully in control of the former, as they involve interactions with the world outside my program. However, I know that,
+as long as I don't break <a href="https://wiki.haskell.org/Referential_transparency">referential transparency</a>, the latter
+will be fully deterministic and therefore easier to manage and reason about.</p></li>
+<li><p><em>IO provides a means to manipulate side effecting code using the same high order functions</em> one gets accustomed to while
+working with Scala collections methods  (e.g. map, flatMap, foldLeft, traverse, etc).</p></li>
+</ul>
+<p>While embracing this programming style, it is important to be aware of a quirk of Scala known as <em>value discarding</em>.
+In this post, I will illustrate how this conversion rule, applied by default by the Scala compiler, might cause your code
+to behave unexpectedly. Such misbehaviour might equally affect your program as it runs in production as well as it
+gets tested in CI. I will point at an easy way to avoid this pitfall by tweaking the compiler flags, thus turning potentially nasty
+runtime bugs into compile time errors.</p>
+<h2><a class="anchor" aria-hidden="true" id="the-pitfall-discarded-effects"></a><a href="#the-pitfall-discarded-effects" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The pitfall: discarded effects</h2>
+<p><img src="https://imgs.xkcd.com/comics/haskell.png" alt="xkcd haskell comic"></p>
+<p>Suppose we are working on some simple CURD functionality and you have refactored your persistence code as follows:</p>
+<pre><code class="hljs css language-scala"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DAO1</span></span>
+<span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">DAO1</span> </span>{
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">setup</span></span>(xa: <span class="hljs-type">Transactor</span>[<span class="hljs-type">IO</span>]): <span class="hljs-type">IO</span>[<span class="hljs-type">DAO1</span>] = <span class="hljs-type">IO</span> {
+    println(<span class="hljs-string">"running pretend DB migrations for DAO1 ..."</span>)
+    <span class="hljs-keyword">new</span> <span class="hljs-type">DAO1</span>
+  }
+}
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DAO2</span></span>
+<span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">DAO2</span> </span>{
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">setup</span></span>(xa: <span class="hljs-type">Transactor</span>[<span class="hljs-type">IO</span>]): <span class="hljs-type">IO</span>[<span class="hljs-type">DAO2</span>] = <span class="hljs-type">IO</span> {
+    println(<span class="hljs-string">"running pretend DB migrations for DAO2 ..."</span>)
+    <span class="hljs-keyword">new</span> <span class="hljs-type">DAO2</span>
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DAO3</span>(<span class="hljs-params">dao1: <span class="hljs-type">DAO1</span>, dao2: <span class="hljs-type">DAO2</span></span>)</span>
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">withDAO</span></span>(dbAction: <span class="hljs-type">DAO3</span> =&gt; <span class="hljs-type">IO</span>[<span class="hljs-type">Unit</span>]): <span class="hljs-type">Unit</span> =
+  withTransactor { xa =&gt;
+    <span class="hljs-keyword">for</span> {
+      dao1 &lt;- <span class="hljs-type">DAO1</span>.setup(xa)
+      dao2 &lt;- <span class="hljs-type">DAO2</span>.setup(xa)
+    } <span class="hljs-keyword">yield</span> dbAction(<span class="hljs-keyword">new</span> <span class="hljs-type">DAO3</span>(dao1, dao2))
+  }.unsafeRunSync()
+
+withDAO { dao =&gt; <span class="hljs-type">IO</span>(println(<span class="hljs-string">s"using DAO: <span class="hljs-subst">$dao</span>"</span>)) }
+<span class="hljs-comment">// running pretend DB migrations for DAO1 ...</span>
+<span class="hljs-comment">// running pretend DB migrations for DAO2 ...</span>
+</code></pre>
+<p>Let's break this snippet apart:</p>
+<ul>
+<li><code>withTransactor</code> is a function that establishes a database connection,
+performs a supplied IO within a transaction, and then safely disposes of the connection.
+It's signature is:</li>
+</ul>
+<pre><code class="hljs css language-scala">   <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">withTransactor</span></span>[<span class="hljs-type">T</span>](f: <span class="hljs-type">Transactor</span>[<span class="hljs-type">IO</span>] =&gt; <span class="hljs-type">IO</span>[<span class="hljs-type">T</span>])
+     : <span class="hljs-type">IO</span>[<span class="hljs-type">T</span>]
+</code></pre>
+<ul>
+<li>We pass in to <code>withTransactor</code> an effectfull function. This initialises two <em>data access objects</em> by running their associated
+db migrations, instantiates DAO3, and finally applies to it the supplied <code>dbAction</code> function.</li>
+</ul>
+<p>However, <em>there is something fishy in this code</em>! While all the <code>setup</code> calls in the for comprehension desugar
+into a sequence of <code>flatMap</code> calls, the final call to <code>runAction</code> which we yield is translated into a call to the <code>map</code> method.</p>
+<p>This results in an expression of type <code>IO[IO[Unit]]</code>, which in itself doesn't align with the return type stated in
+<code>withTransactor</code>'s signature, and yet compiles just fine.</p>
+<p>Enter value discarding. As concisely stated in <a href="https://scala-lang.org/files/archive/spec/2.12/06-expressions.html#value-conversions">section 6.26.1</a>
+of the Scala language specification, value discarding is an <em>&quot;implicit conversion&quot;</em> that can be applied to <em>&quot;an expression
+which is type checked with some expected type&quot;</em>.</p>
+<blockquote>
+<p>If e has some value type and the expected type is Unit, e is converted to the expected type by embedding it in the term { e; () }.</p>
+</blockquote>
+<p>This rule was probably intended as an ergonomic touch to make the compiler a bit smarter and less pedantic.
+However, I would argue that here it is working against the programmer, as what gets discarded and never executed is
+likely to be some important part of our program logic.</p>
+<h2><a class="anchor" aria-hidden="true" id="compiler-flags-to-the-rescue"></a><a href="#compiler-flags-to-the-rescue" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Compiler flags to the rescue</h2>
+<p>Despite it does not provide a proper way to disable this conversion rule all together, the Scala 2 compiler can be easily configured
+to be more strict with regard to value discarding. When used in combination with <code>-Xfatal-warning</code>, setting the <code>-Ywarn-value-discard</code>
+flag will result in a compilation error. In the case of the snippet above, we would have encountered the following (fatal) warning:</p>
+<pre><code class="hljs css language-scala">[error] example.scala:<span class="hljs-number">12</span> discarded non-<span class="hljs-type">Unit</span> value
+</code></pre>
+<p>As a reminder, this is the relevant Sbt setting to set these flags:</p>
+<pre><code class="hljs css language-scala">scalacOptions ++= <span class="hljs-type">Seq</span>(
+  <span class="hljs-string">"-Ywarn-value-discard"</span>,
+  <span class="hljs-string">"-Xfatal-warnings"</span>
+)
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="discarded-assertions"></a><a href="#discarded-assertions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Discarded assertions</h2>
+<p>In fairness, one could argue that this pitfall could have been easily detected with some basic test coverage in place.</p>
+<p>A test asserting that whatever effect our IO performs has actually occurred would have spotted this.
+However, this is true only as long as our testing logic is actually executed and does not get discarded by the compiler.</p>
+<p>As an example, let's take the previous snippet and bring it the context of a unit test.</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> org.scalatest.{<span class="hljs-type">Matchers</span>, <span class="hljs-type">FlatSpec</span>}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DiscardingTest</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">FlatSpec</span> <span class="hljs-keyword">with</span> <span class="hljs-title">Matchers</span> </span>{
+  <span class="hljs-string">"DAO4"</span> should <span class="hljs-string">"persist a record"</span> in {
+     withDAO4 { dao =&gt;
+       <span class="hljs-keyword">for</span> {
+         _ &lt;- dao.persist(<span class="hljs-keyword">new</span> <span class="hljs-type">Record</span>)
+         persisted &lt;- dao.persisted
+       } <span class="hljs-keyword">yield</span> persisted.nonEmpty shouldBe <span class="hljs-literal">true</span>
+     }
+  }
+
+  <span class="hljs-keyword">private</span> <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">withDAO4</span></span>(dbAction: <span class="hljs-type">DAO4</span> =&gt; <span class="hljs-type">IO</span>[<span class="hljs-type">Unit</span>]): <span class="hljs-type">Unit</span> =
+    withTransactor { xa =&gt;
+      <span class="hljs-keyword">for</span> {
+        dao1 &lt;- <span class="hljs-type">DAO1</span>.setup(xa)
+        dao2 &lt;- <span class="hljs-type">DAO2</span>.setup(xa)
+        records &lt;- <span class="hljs-type">Ref</span>[<span class="hljs-type">IO</span>].of(<span class="hljs-type">List</span>.empty[<span class="hljs-type">Record</span>])
+      } <span class="hljs-keyword">yield</span> dbAction(<span class="hljs-keyword">new</span> <span class="hljs-type">DAO4</span>(dao1, dao2, records))
+    }.unsafeRunSync()
+}
+
+<span class="hljs-comment">//buggy DAO4 implementation</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DAO4</span>(<span class="hljs-params">dao1: <span class="hljs-type">DAO1</span>, dao2: <span class="hljs-type">DAO2</span>, records: <span class="hljs-type">Ref</span>[<span class="hljs-type">IO</span>, <span class="hljs-type">List</span>[<span class="hljs-type">Record</span>]]</span>) </span>{
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">persist</span></span>(record: <span class="hljs-type">Record</span>): <span class="hljs-type">IO</span>[<span class="hljs-type">Unit</span>] = <span class="hljs-keyword">for</span> {
+    _ &lt;- <span class="hljs-type">IO</span>.raiseError( <span class="hljs-keyword">new</span> <span class="hljs-type">IllegalStateException</span>(<span class="hljs-string">"This exception might be discarded!"</span>))
+    _ &lt;- records.update(_ :+ record)
+  } <span class="hljs-keyword">yield</span> ()
+
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">persisted</span></span>: <span class="hljs-type">IO</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Record</span>]] = records.get
+}
+</code></pre>
+<p><code>withDAO4</code> is a helper method intended to facilitate testing our persistence logic. This time, the IO function we pass in as
+argument will do the following:</p>
+<ul>
+<li><code>persist</code> a record.</li>
+<li>sequence a second IO call returning the list of persisted records.</li>
+<li>asserts that the returned value is not an empty collection.</li>
+</ul>
+<p>But what happens when we actually run the test above?</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> org.scalatest._
+
+durations.stats.nocolor.run(<span class="hljs-keyword">new</span> <span class="hljs-type">DiscardingTest</span>)
+<span class="hljs-comment">// Run starting. Expected test count is: 1</span>
+<span class="hljs-comment">// Session$App$DiscardingTest$1:</span>
+<span class="hljs-comment">// DAO4</span>
+<span class="hljs-comment">// running pretend DB migrations for DAO1 ...</span>
+<span class="hljs-comment">// running pretend DB migrations for DAO2 ...</span>
+<span class="hljs-comment">// - should persist a record (7 milliseconds)</span>
+<span class="hljs-comment">// Run completed in 9 milliseconds.</span>
+<span class="hljs-comment">// Total number of tests run: 1</span>
+<span class="hljs-comment">// Suites: completed 1, aborted 0</span>
+<span class="hljs-comment">// Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0</span>
+<span class="hljs-comment">// All tests passed.</span>
+</code></pre>
+<p>From bad to worse: not only our <code>dbAction</code> is discarded, but Scalatest happily reports that our test succeeded!</p>
+<p>I have not spent time figuring out properly the mechanics whereby the library determines this outcome. From the outside, it seems like it is
+taking an optimistic approach and deems a test successful unless at least one of its assertions fail.</p>
+<h2><a class="anchor" aria-hidden="true" id="conclusions-avoid-a-double-facepalm"></a><a href="#conclusions-avoid-a-double-facepalm" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Conclusions: avoid a double facepalm!</h2>
+<p><img src="/img/posts/double-facepalm.jpg" alt="double facepalm meme"></p>
+<p>I have become aware of value discarding a while back, through an <a href="https://underscore.io/blog/posts/2016/11/24/value-discard.html">excellent post</a>
+by Richard Dallaway. A few years later, this arguably strange behaviour is still the default for both Scala2 and Dotty.
+Promisingly, a <a href="https://contributors.scala-lang.org/t/pre-sip-limiting-value-discards/3729">pre-SIP</a> has been recently put forward
+to make the mechanism fully explicit, or configurable on a whitelist basis.
+Hopefully this this proposal will get some traction and ultimately lead to a more sensible default for this feature.</p>
+<p>Retrospectively, I can say that I have fell for this pitfall at least twice, and in both cases the discarded effect
+in my test code was hiding an actual bug in the implementation (a true <em>double facepalm</em> moment!).</p>
+<p>As a recommendation to fellow functional programmers picking up Cats effects and similar, I would definitely suggest
+spending time learning about the available <a href="https://docs.scala-lang.org/overviews/compiler-options/index.html#Warning_Settings">compiler flags</a>,
+and how they might be leveraged to make your build safer and sharper. Unless it is really not viable to do so,
+making warnings fatal is 99% of the times a good idea, especially if you are working on a relatively small
+and new code-base.</p>
+<p>The other, perhaps bit more obvious piece of wisdom I feel like sharing (also as a note to self), is to never
+trust blindly a green Scalatest suite. It is always a good idea to satisfy yourself that your assertions fail when you explicitly
+break your implementation. While I learn more on how to best <a href="https://en.wikipedia.org/wiki/Mutation_testing">automate this process</a>,
+ensuring that this verification is carried out will be a matter of discipline and habit.</p>
+</span></div></div><div class="blogSocialSection"></div></div><div class="blog-recent"><a class="button" href="/websiteblog/">Recent Posts</a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#why-using-an-effect-system">Why using an effect system</a></li><li><a href="#the-pitfall-discarded-effects">The pitfall: discarded effects</a></li><li><a href="#compiler-flags-to-the-rescue">Compiler flags to the rescue</a></li><li><a href="#discarded-assertions">Discarded assertions</a></li><li><a href="#conclusions-avoid-a-double-facepalm">Conclusions: avoid a double facepalm!</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="copyright">Copyright © 2020 Your Name or Your Company Name</section></footer></div></body></html>
