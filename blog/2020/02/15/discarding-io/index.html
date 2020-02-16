@@ -197,8 +197,8 @@ durations.stats.nocolor.run(<span class="hljs-keyword">new</span> <span class="h
 <span class="hljs-comment">// DAO4</span>
 <span class="hljs-comment">// running pretend DB migrations for DAO1 ...</span>
 <span class="hljs-comment">// running pretend DB migrations for DAO2 ...</span>
-<span class="hljs-comment">// - should persist a record (7 milliseconds)</span>
-<span class="hljs-comment">// Run completed in 9 milliseconds.</span>
+<span class="hljs-comment">// - should persist a record (11 milliseconds)</span>
+<span class="hljs-comment">// Run completed in 33 milliseconds.</span>
 <span class="hljs-comment">// Total number of tests run: 1</span>
 <span class="hljs-comment">// Suites: completed 1, aborted 0</span>
 <span class="hljs-comment">// Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0</span>
@@ -208,7 +208,7 @@ durations.stats.nocolor.run(<span class="hljs-keyword">new</span> <span class="h
 <p>I have not spent time figuring out properly the mechanics whereby the library determines this outcome. From the outside, it seems like it is
 taking an optimistic approach and deems a test successful unless at least one of its assertions fail.</p>
 <h2><a class="anchor" aria-hidden="true" id="conclusions-avoid-a-double-facepalm"></a><a href="#conclusions-avoid-a-double-facepalm" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Conclusions: avoid a double facepalm!</h2>
-<p><img src="/img/posts/double-facepalm.jpg" alt="double facepalm meme"></p>
+<p><img src="/website/img/posts/double-facepalm.jpg" alt="double facepalm meme"></p>
 <p>I have become aware of value discarding a while back, through an <a href="https://underscore.io/blog/posts/2016/11/24/value-discard.html">excellent post</a>
 by Richard Dallaway. A few years later, this arguably strange behaviour is still the default for both Scala2 and Dotty.
 Promisingly, a <a href="https://contributors.scala-lang.org/t/pre-sip-limiting-value-discards/3729">pre-SIP</a> has been recently put forward
