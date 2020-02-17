@@ -1,0 +1,12 @@
+--2020-02-17 10:20:32--  https://imgs.xkcd.com/comics/haskell.png
+Loaded CA certificate '/etc/ssl/certs/ca-certificates.crt'
+Resolving imgs.xkcd.com (imgs.xkcd.com)... 151.101.36.67, 2a04:4e42:9::67
+Connecting to imgs.xkcd.com (imgs.xkcd.com)|151.101.36.67|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 12783 (12K) [image/png]
+Saving to: ‘haskell.png’
+
+     0K .......... ..                                         100% 83.9M=0s
+
+2020-02-17 10:20:32 (83.9 MB/s) - ‘haskell.png’ saved [12783/12783]
+
