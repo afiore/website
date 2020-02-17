@@ -31,7 +31,7 @@ runtime bugs into compile time errors.
 
 ## The pitfall: discarded effects
 
-![xkcd haskell comic](https://imgs.xkcd.com/comics/haskell.png )
+![xkcd haskell comic](/website/img/posts/xkcd-haskell.png)
 
 Suppose we are working on some simple CURD functionality and you have refactored your persistence code as follows:
 ```scala mdoc:invisible
