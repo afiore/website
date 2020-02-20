@@ -75,8 +75,8 @@ to behave unexpectedly. Such misbehaviour might equally affect your program as i
 gets tested in CI. I will point at an easy way to avoid this pitfall by tweaking the compiler flags, thus turning potentially nasty
 runtime bugs into compile time errors.</p>
 <h2><a class="anchor" aria-hidden="true" id="the-pitfall-discarded-effects"></a><a href="#the-pitfall-discarded-effects" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The pitfall: discarded effects</h2>
-<p><img src="https://imgs.xkcd.com/comics/haskell.png" alt="xkcd haskell comic"></p>
-<p>Suppose we are working on some simple CURD functionality and you have refactored your persistence code as follows:</p>
+<p><img src="/website/img/posts/xkcd-haskell.png" alt="xkcd haskell comic"></p>
+<p>Suppose we are working on some simple CRUD functionality and you have refactored your persistence code as follows:</p>
 <pre><code class="hljs css language-scala"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DAO1</span></span>
 <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">DAO1</span> </span>{
   <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">setup</span></span>(xa: <span class="hljs-type">Transactor</span>[<span class="hljs-type">IO</span>]): <span class="hljs-type">IO</span>[<span class="hljs-type">DAO1</span>] = <span class="hljs-type">IO</span> {
@@ -197,8 +197,8 @@ durations.stats.nocolor.run(<span class="hljs-keyword">new</span> <span class="h
 <span class="hljs-comment">// DAO4</span>
 <span class="hljs-comment">// running pretend DB migrations for DAO1 ...</span>
 <span class="hljs-comment">// running pretend DB migrations for DAO2 ...</span>
-<span class="hljs-comment">// - should persist a record (11 milliseconds)</span>
-<span class="hljs-comment">// Run completed in 33 milliseconds.</span>
+<span class="hljs-comment">// - should persist a record (19 milliseconds)</span>
+<span class="hljs-comment">// Run completed in 59 milliseconds.</span>
 <span class="hljs-comment">// Total number of tests run: 1</span>
 <span class="hljs-comment">// Suites: completed 1, aborted 0</span>
 <span class="hljs-comment">// Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0</span>
