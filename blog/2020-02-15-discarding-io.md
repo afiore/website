@@ -33,7 +33,7 @@ runtime bugs into compile time errors.
 
 ![xkcd haskell comic](/website/img/posts/xkcd-haskell.png)
 
-Suppose we are working on some simple CURD functionality and you have refactored your persistence code as follows:
+Suppose we are working on some simple CRUD functionality and you have refactored your persistence code as follows:
 ```scala mdoc:invisible
 import java.util.UUID
 
