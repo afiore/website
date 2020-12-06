@@ -2,12 +2,24 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://afiore.github.io/website/blog</id>
     <title>Unfold Blog</title>
-    <updated>2020-02-15T06:00:00.000Z</updated>
+    <updated>2020-11-02T06:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://afiore.github.io/website/blog"/>
     <subtitle>The best place to stay up-to-date with the latest Unfold news and events.</subtitle>
     <logo>https://afiore.github.io/website/img/favicon.ico</logo>
     <rights>Copyright © 2020 Your Name or Your Company Name</rights>
+    <entry>
+        <title type="html"><![CDATA[Type driven REST API endpoints using Scala and Tapir]]></title>
+        <id>https://afiore.github.io/website/blog/2020/11/02/acls-in-tapir.html</id>
+        <link href="https://afiore.github.io/website/blog/2020/11/02/acls-in-tapir.html"/>
+        <updated>2020-11-02T06:00:00.000Z</updated>
+        <summary type="html"><![CDATA[<p>In a previous post, I have discussed at length <em>why</em> in order to grow a mature API driven product, we also need a mechanism to keep API documentation and implementations in sync. It’s now time for me to illustrate <em>how</em> such a mechanism might look like i...</p>]]></summary>
+        <author>
+            <name>Andrea Fiore</name>
+            <email/>
+            <uri>http://twitter.com/afiore</uri>
+        </author>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Discarded effects: a common pitfall when working with Scala IO monads]]></title>
         <id>https://afiore.github.io/website/blog/2020/02/15/discarding-io.html</id>
