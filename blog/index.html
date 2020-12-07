@@ -57,13 +57,13 @@
         </script></nav></div><div class="container mainContainer postContainer blogContainer"><div class="wrapper"><div class="posts"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle"><a href="/website/blog/2020/11/02/acls-in-tapir">Type driven API development using Scala and Tapir</a></h1><p class="post-meta">November 2, 2020</p><div class="authorBlock"><p class="post-authorName"><a href="http://twitter.com/afiore" target="_blank" rel="noreferrer noopener">Andrea Fiore</a></p></div></header><article class="post-content"><div><span><p>In a previous post, I have discussed at length <em>why</em>, in order to grow a mature API driven product, we need a mechanism
 to keep API documentation and implementations in sync. It’s now time for me to illustrate <em>how</em> such
 a mechanism might look like in the backend; so let's get our hands dirty and write some code!</p>
-<p>In this post, I will use Tapir - an excellent open source library by <a href="https://softwaremill.com/">Softwaremill</a> - to demonstrate
-how a <em><a href="https://swagger.io/blog/api-design/design-first-or-code-first-api-development/">code first</a></em> approach to API development in Scala.</p>
+<p>In this post, I will use <a href="https://tapir-scala.readthedocs.io/">Tapir</a> - an excellent open source library by <a href="https://softwaremill.com/">Softwaremill</a> - to demonstrate
+a <em><a href="https://swagger.io/blog/api-design/design-first-or-code-first-api-development/">code first</a></em> approach to API development in Scala.</p>
 <p>The plan is to work our way through building a couple of REST endpoints for managing Kafka ACLs.
 For the sake of simplicity, we will only be creating and listing ACL rules; which is only a subset of all the operations we
 would need for a complete API. Also, we will deliberately gloss over the actual persistence of the ACL rules into an actual datastore
 (e.g. Zookeeper or similar), and we will simply store them in-memory. Similarly, I will briefly cover how Tapir can handle authentication
-and authorisation, but for simplicitly I will leave this unimplemented in most of my code samples.</p>
+and authorisation, but for simplicity I will leave this unimplemented in most of my code samples.</p>
 <h3><a class="anchor" aria-hidden="true" id="modelling-our-api-entities"></a><a href="#modelling-our-api-entities" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Modelling our API entities</h3>
 <p>Kafka ACLs (Access control lists) are a built-in authorisation mechanism whereby administrators can control access to a cluster’s data.
 In a nutshell, a Kafka <em>ACL binding</em> comprises of the following key attributes:</p>
@@ -178,8 +178,8 @@ But first, let's quickly flash out another endpoint to list the persisted Acls:<
 <p>As mentioned before, we plan on stubbing the persistence of our ACL bindings into a in-memory structure.
 However, in order to do so we will still need to rely on a real HTTP server capable of handling incoming client
 requests.</p>
-<p>For this post, I have chosen to use http4s, a library that allows to work with HTTP in a <em>purely functional</em> style.
-Please do not run away if this is not your library of choice. As well as for http4s, Tapir provides support for several other
+<p>For this post, I have chosen to use <a href="https://http4s.org/">Http4s</a>, a library that allows to work with HTTP in a <em>purely functional</em> style.
+Please do not run away if this is not your library of choice. As well as for Http4s, Tapir provides support for several other
 Scala HTTP server implementations such us Akka-HTTP, Play, Finatra, and Vert.X.</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> sttp.tapir._
 <span class="hljs-keyword">import</span> sttp.tapir.server.http4s._
@@ -209,7 +209,7 @@ Scala HTTP server implementations such us Akka-HTTP, Play, Finatra, and Vert.X.<
 classes that extend our <code>Endpoint[_,...]</code> with a <code>toRoutes</code> method. <code>toRoutes</code> <em>interprets</em> the Tapir
 endpoint description into a <code>org.http4.HttpRoutes[IO]</code> (i.e. the actual HTTP server implementation).
 Also, notice how the input, error and output types of the two routes are fully aligned with the ones of our endpoint
-definitions. It is by this aliment mechanism that the library provides us with strong compile-time guarantess that
+definitions. It is by this aliment mechanism that the library provides us with strong compile-time guarantees that
 our implementation won't drift away from the generated docs, and that our system <em>will do exactly what it says on the tin</em>.</p>
 <p>Let's now look at the two route implementations. In <code>createNewAcl</code>, we pass the parsed payload <code>aclBinding</code> as an input for <code>AclValidation.isValid</code>.
 For simplicity, I am omitting the actual implementation of the <code>AclValidation</code> object. For the sake of example, let's say that <code>isValid</code> performs some simple logic to verify
@@ -220,7 +220,7 @@ a <code>Left</code> wrapping an <code>ApiError</code> value.</p>
 <p>The implementation of <code>listAcls</code> is equally simple. Here we read from our store, apply an optional <code>ResourceType</code> filter, and return the resulting set of acls as a list.
 Unlike with the <code>createNewAcl</code>, we don't expect this endpoint to ever return a <code>Bad Request</code>, so we type its error as <code>Unit</code>.</p>
 <p>Aside from reading and writing to the atomic reference <code>aclStore</code>, our ACL handling code here is pretty much pure and side-effect free. However,
-Tapir models the logic used to interpret the endpoint into an actual route as a function of the followign shape: <code>I =&gt; IO[Either[E, O]</code>, or more generically <code>I =&gt; F[Either[E, O]</code>.
+Tapir models the logic used to interpret the endpoint into an actual route as a function of the following shape: <code>I =&gt; IO[Either[E, O]</code>, or more generically <code>I =&gt; F[Either[E, O]</code>.
 This makes sense, as most read world API endpoints perform some sort of effectful computation such us opening sockets, interacting with a datastore, or reading/writing to disk.</p>
 <h3><a class="anchor" aria-hidden="true" id="authentication-and-other-common-route-logic"></a><a href="#authentication-and-other-common-route-logic" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Authentication and other common route logic</h3>
 <p>While in the endpoint definitions above we do specify an <code>x-api-token</code> header, you might have noticed that we haven't yet
@@ -236,10 +236,10 @@ implemented any logic around this mandatory input. As it currently stands, our s
    }
 }
 </code></pre>
-<p>This might look okay in a small codebase like ours, but it will probably not fly on a large
+<p>This might look okay in a small code-base like ours, but it will probably not fly on a large
 one, as the boilerplate and the nesting of helper functions like <code>userOrApiError</code> will increase as
 our cross-cutting concerns become more complex and involved.</p>
-<p>Lukily, the authors of Tapir have recently come up with a nicer pattern to handle common logic such as
+<p>Luckily for us, the authors of Tapir have recently come up with a nicer pattern to handle common logic such as
 authentication and authorisation. This revolves around the notion of partially defined endpoints which can combine
 an input/output description with some server logic:</p>
 <pre><code class="hljs css language-scala"><span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">SecureAclEndpoints</span> </span>{
@@ -262,13 +262,13 @@ definitions:</p>
       .in(<span class="hljs-string">"api"</span> / <span class="hljs-string">"kafka"</span> / <span class="hljs-string">"acls"</span>)
       .in(jsonBody[<span class="hljs-type">AclBinding</span>])
       .out(statusCode(<span class="hljs-type">StatusCode</span>.<span class="hljs-type">Created</span>))
-<span class="hljs-comment">// createNewAcl: server.PartialServerEndpoint[User, AclBinding, ApiError, typelevel.LowPriorityTupleConcat0.&lt;refinement&gt;.this.type.Out, Any, IO] = sttp.tapir.server.PartialServerEndpoint$$anon$1@60a9693c</span>
+<span class="hljs-comment">// createNewAcl: server.PartialServerEndpoint[User, AclBinding, ApiError, typelevel.LowPriorityTupleConcat0.&lt;refinement&gt;.this.type.Out, Any, IO] = sttp.tapir.server.PartialServerEndpoint$$anon$1@6617a</span>
 </code></pre>
 <p>For more details on partial endpoints and other ways in which Tapir allows to abstract common logic, please refer to the
 the <a href="https://tapir.softwaremill.com/en/v0.16.16/server/logic.html">Server Logic</a> section of the official docs.</p>
 <h3><a class="anchor" aria-hidden="true" id="hitting-our-endpoints"></a><a href="#hitting-our-endpoints" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Hitting our endpoints</h3>
 <p>Okay, so we have a couple of endpoints defined and implemented. Now we should probably check that they work as expected.
-One way to do so without having to bind an actual web server to a port is to use http4s DSL and hit our routes programmatically, as we would do in a simple unit test covering only the route logic.</p>
+One way to do so without having to bind an actual web server to a port is to use Http4s DSL and hit our routes programmatically, as we would do in a simple unit test covering only the route logic.</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> cats.effect.<span class="hljs-type">IO</span>
 <span class="hljs-keyword">import</span> cats.effect.concurrent.<span class="hljs-type">Ref</span>
 <span class="hljs-keyword">import</span> org.http4s.<span class="hljs-type">HttpRoutes</span>
@@ -295,7 +295,7 @@ One way to do so without having to bind an actual web server to a port is to use
 <span class="hljs-keyword">val</span> routes = <span class="hljs-keyword">new</span> <span class="hljs-type">AclRoutes</span>(store).combined.orNotFound
 </code></pre>
 <p>Here we just setup the boilerplate needed to run some HTTP request through our web service:
-We initialise a store and the AclRoutes, and then we compose the two routes
+We initialise a store and the <code>AclRoutes</code>, and then we compose the two routes
 above into a single http service which will fallback to a 404 response should it fail to match
 the incoming request. With some help from the http4s DSL, we can now fire a few requests
 at our endpoints!</p>
@@ -341,10 +341,10 @@ routes(
 </code></pre>
 <p>Hurray! Our endpoints seem to work as expected.</p>
 <h3><a class="anchor" aria-hidden="true" id="interpreting-into-an-openapi-spec"></a><a href="#interpreting-into-an-openapi-spec" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Interpreting into an OpenAPI spec</h3>
-<p>With both endpoint declartion, implementation and testing covered, we are finally ready to look into
-how Tapir helps us writing and maintaining high quality API docs. This is surprisingly straightfoward
+<p>With both endpoint declaration, implementation and testing covered, we are finally ready to look into
+how Tapir helps us writing and maintaining high quality API docs. This is surprisingly straightforward
 as it only involves grouping our endpoint definitions into a sequence and use a simple DSL to build an OpenAPI
-spec: a machine readable specification detailing all the relevant attributes of our endpoints, from the query paramters
+spec: a machine readable specification detailing all the relevant attributes of our endpoints, from the query parameters
 to the JSON schema of the request/response payloads.</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> sttp.tapir._
 <span class="hljs-keyword">import</span> sttp.tapir.openapi.<span class="hljs-type">OpenAPI</span>
@@ -406,7 +406,7 @@ to the JSON schema of the request/response payloads.</p>
 <span class="hljs-comment">// ...</span>
 </code></pre>
 <p>Notice that the value returned by <code>toOpenAPI</code> is a syntax tree modelling an OpenAPI spec. Once computed,
-this syntax tree can be modified and extended using plain scala functions. Most of the times, this is something you will
+this syntax tree can be modified and extended using plain Scala functions. Most of the times, this is something you will
 not need doing, but it can provide a good escape hatch should you need to produce OpenAPI specs in a way that for some reason
 Tapir doesn't support.</p>
 <p>As a final step, you will probably want to serialise the spec into YAML so that it can be exported or served to the browser
@@ -564,10 +564,10 @@ println(openAPISpec.toYaml)
 <span class="hljs-comment">//</span>
 </code></pre>
 <p>As a format, OpenAPI is agnostic of its presentation. However, several web-based UI tools exist to browse and interact with
-OpenAPI specs. This is how our endpoints look like when viewed in SwaggerUI, one of the most popular OpenAPI viewer:</p>
+OpenAPI specs. This is how our endpoints look like when viewed in <a href="https://editor.swagger.io/">SwaggerUI</a>, one of the most popular OpenAPI viewer:</p>
 <p><img src="https://ibin.co/w800/5jSShLatLQ7N.png" alt="endpoints see SwaggerUI"></p>
 <h3><a class="anchor" aria-hidden="true" id="interpreting-into-an-api-client"></a><a href="#interpreting-into-an-api-client" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Interpreting into an API client</h3>
-<p>Autogenerating API docs from our endpoint definitions is great, but it doesn't have to end there; we can be more ambitious and automate more agressively!
+<p>Automatically generating API docs from our endpoint definitions is great, but it doesn't have to end there; we can be more ambitious and automate more aggressively!
 As well as an OpenAPI spec, Tapir can also <em>interpret</em> an endpoint definition into a fully functioning API client:</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> sttp.tapir.client.sttp._
 <span class="hljs-keyword">import</span> sttp.client3._
@@ -583,26 +583,27 @@ As well as an OpenAPI spec, Tapir can also <em>interpret</em> an endpoint defini
    }
 }
 </code></pre>
-<p>The snippet above illustrates how to use Tapir to generate HTTP requests for the Sttp client. The <code>toSttpRequestUnsafe</code>
+<p>The snippet above illustrates how to use Tapir to generate HTTP requests for the <a href="https://tapir.softwaremill.com/en/latest/client/sttp.html">Sttp</a> client. The <code>toSttpRequestUnsafe</code>
 function brought in by the <code>sttp.tapir.client.sttp</code> import, takes in two parameters:</p>
 <ul>
 <li>A <code>baseUrl</code> for our API server</li>
 <li>The endpoint inputs, as specified in the above definition (in this example, a <code>Touple2</code> containing the api key and the supplied ACL binding).</li>
 </ul>
 <p>Compared to our previous snippet, where we hit our endpoints using the Http4s DSL, this approach has some significant advantages:
-the generated Tapir API client neatly abstracts away the details of the HTTP implementation as well as the serialisation format, exposing only a function that maps our API inputs to its outpus.</p>
+the generated Tapir API client neatly abstracts away the details of the HTTP implementation as well as the serialisation format, exposing only a function that maps our API inputs to its outputs.</p>
 <p>Arguably, working at this level of abstraction is for most engineers preferable than having to be
 bogged down into the details of hand-wiring HTTP requests. Moreover, it is also safer, as it rules out a
-whole class of trivial and yet very frequent programming errors (e.g. mispelling the api key header, omitting part of the ACL JSON payload, etc) while reducing the likelyhood for the client implementation to go out of sync with the server.</p>
+whole class of trivial and yet very frequent programming errors (e.g. misspelling the API key header, omitting part of the
+ACL JSON payload, etc) while reducing the likelihood for the client implementation to go out of sync with the server.</p>
 <h3><a class="anchor" aria-hidden="true" id="conclusions"></a><a href="#conclusions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Conclusions</h3>
-<p>In this post, I have tried to demostrate Tapir's main features by working through the implementation of a REST API
-for creating and listing Kafka ACLs. We saw how endpoint definitions, expressed as scala types, can drive the
-implementation of both server side logic while at the same time automatically genrate up-to-date
+<p>In this post, I have tried to demonstrate Tapir's main features by working through the implementation of a REST API
+for creating and listing Kafka ACLs. We saw how endpoint definitions, expressed as Scala types, can drive the
+implementation of both server side logic while at the same time automatically generate up-to-date
 API docs, as well as fully functioning API clients.</p>
 <p>Now, before you set off to introduce Tapir in your production code-base, please let me also share a few words of warning:</p>
 <p>Firstly, despite its increasingly rich set of features and integrations, keep in mind that Tapir is still a relatively
-young project with only a couple of years of active development under his belt. While it is definitly reaching maturity,
-I would still expect its API to occasionally introduce somes breaking changes, which might make it harder to retrofit
+young project with only a couple of years of active development under his belt. While it is definitely reaching maturity,
+I would still expect its API to occasionally introduce some breaking changes, which might make it harder to retrofit
 into a large existing project.</p>
 <p>Secondly, like with every software framework, do keep in mind that all the good automation and safety that Tapir brings
 about comes at a cost. You will have to face a slightly higher degree of indirection, as the library centralises
@@ -612,7 +613,8 @@ control over settings and behaviours that you would otherwise be able to control
 such as type-level programming, type-class derivation, macros, etc. In other words, this is something you probably want to
 stay clear from if you are still familiarising with the language.</p>
 <p>That said, if you are not put off by either of the above, this might be a price worth paying in exchange for a higher
-degree of API integration, automation and consistency. I hope I have shared with you some of my enthusiasm for this excellent library, as I genuinely belive it makes building complex, API driven systems at scale easier and safer to
+degree of API integration, automation and consistency. I hope I have shared with you some of my enthusiasm for this excellent
+library, as I genuinely believe it makes building complex, API driven systems at scale easier and safer to
 a remarkable extent.</p>
 </span></div></article></div><div class="post"><header class="postHeader"><h1 class="postHeaderTitle"><a href="/website/blog/2020/02/15/discarding-io">Discarded effects: a common pitfall when working with Scala IO monads</a></h1><p class="post-meta">February 15, 2020</p><div class="authorBlock"><p class="post-authorName"><a href="http://twitter.com/afiore" target="_blank" rel="noreferrer noopener">Andrea Fiore</a></p></div></header><article class="post-content"><div><span><p>One thing that I would be certainly missing if I was to drop Scala in favor of another programming language is a
 mechanism to suspend the execution of side effects.</p>
@@ -758,7 +760,7 @@ durations.stats.nocolor.run(<span class="hljs-keyword">new</span> <span class="h
 <span class="hljs-comment">// running pretend DB migrations for DAO1 ...</span>
 <span class="hljs-comment">// running pretend DB migrations for DAO2 ...</span>
 <span class="hljs-comment">// - should persist a record (16 milliseconds)</span>
-<span class="hljs-comment">// Run completed in 48 milliseconds.</span>
+<span class="hljs-comment">// Run completed in 47 milliseconds.</span>
 <span class="hljs-comment">// Total number of tests run: 1</span>
 <span class="hljs-comment">// Suites: completed 1, aborted 0</span>
 <span class="hljs-comment">// Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0</span>
