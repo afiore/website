@@ -1,24 +1,26 @@
 ---
-title: "Type driven REST API endpoints using Scala and Tapir"
+title: "Type driven API development using Scala and Tapir"
 author: Andrea Fiore
 authorURL: http://twitter.com/afiore
 ---
 
-In a previous post, I have discussed at length _why_ in order to grow a mature API driven product, we also need a mechanism
+In a previous post, I have discussed at length _why_, in order to grow a mature API driven product, we need a mechanism
 to keep API documentation and implementations in sync. It’s now time for me to illustrate _how_ such 
 a mechanism might look like in the backend; so let's get our hands dirty and write some code!
 
-In this post, I will use Tapir - an excellent open source library maintained by Softwaremill - to demonstrate 
-how such a _code first_ approach can be implemented in a Scala codebase.
+In this post, I will use [Tapir](https://tapir-scala.readthedocs.io/) - an excellent open source library by [Softwaremill](https://softwaremill.com/) - to demonstrate 
+a _[code first](https://swagger.io/blog/api-design/design-first-or-code-first-api-development/)_ approach to API development in Scala.
 
 The plan is to work our way through building a couple of REST endpoints for managing Kafka ACLs.
 For the sake of simplicity, we will only be creating and listing ACL rules; which is only a subset of all the operations we 
 would need for a complete API. Also, we will deliberately gloss over the actual persistence of the ACL rules into an actual datastore 
-(e.g. Zookeeper or similar), and we will simply store them in-memory. Similarly, while I will briefly cover how Tapir can handle authentication and authorisation, for simplicitly I will leave this unimplemented in most of my code samples.
+(e.g. Zookeeper or similar), and we will simply store them in-memory. Similarly, I will briefly cover how Tapir can handle authentication 
+and authorisation, but for simplicity I will leave this unimplemented in most of my code samples.
 
 ### Modelling our API entities
 
-Kafka ACLs (Access control lists) are a built-in authorisation mechanism whereby administrators can control access to a cluster’s data. In a nutshell, a Kafka _ACL binding_ comprises of the following key attributes:
+Kafka ACLs (Access control lists) are a built-in authorisation mechanism whereby administrators can control access to a cluster’s data. 
+In a nutshell, a Kafka _ACL binding_ comprises of the following key attributes:
 
 - A _resource_ on which to perform some sort of operation
 - The _operation_ itself (which varies, depending on the resource)
@@ -144,9 +146,10 @@ In Tapir, REST endpoints are described as values of type `Endpoint[I, E, O, S]` 
 - `I` is a _tuple_ representing the various endpoint inputs (e.g. dynamic path fragments, query params, as well as its parsed request payload).
 - `E` and `O` are output types for the error (e.g. 400 Bad Request) and the success (2xx) case.
 - `S` is the type of streams that are used by the endpoint’s inputs/outputs. This is relevant only for more advanced use 
-  cases such as defining Server Sent Events and Websocket endpoints, which we will not be covering in this post.
+  cases such as defining _Server Sent Events_ and Websocket endpoints, which we will not be covering in this post.
 
-In order to declare such complex type definitions, the library provides us with a builder syntax that allows us to incrementally declare our endpoint's inlets and outlets bit by bit, with great degree of precision:
+In order to declare such complex type definitions, the library provides us with a builder syntax that allows us to incrementally declare our endpoint's 
+inlets and outlets bit by bit, with a high degree of precision:
 
 ```scala mdoc:nest
 
@@ -215,8 +218,8 @@ As mentioned before, we plan on stubbing the persistence of our ACL bindings int
 However, in order to do so we will still need to rely on a real HTTP server capable of handling incoming client 
 requests.
 
-For this post, I have chosen to use http4s, a library that allows to work with HTTP in a _purely functional_ style.
-Please do not run away if this is not your library of choice. As well as for http4s, Tapir provides support for several other 
+For this post, I have chosen to use [Http4s](https://http4s.org/), a library that allows to work with HTTP in a _purely functional_ style.
+Please do not run away if this is not your library of choice. As well as for Http4s, Tapir provides support for several other 
 Scala HTTP server implementations such us Akka-HTTP, Play, Finatra, and Vert.X.
 
 ```scala mdoc:invisible
@@ -278,7 +281,7 @@ To start with, notice the `sttp.tapir.server.http4s._` import. This brings in a 
 classes that extend our `Endpoint[_,...]` with a `toRoutes` method. `toRoutes` _interprets_ the Tapir 
 endpoint description into a `org.http4.HttpRoutes[IO]` (i.e. the actual HTTP server implementation). 
 Also, notice how the input, error and output types of the two routes are fully aligned with the ones of our endpoint 
-definitions. It is by this aliment mechanism that the library provides us with strong compile-time guarantess that 
+definitions. It is by this aliment mechanism that the library provides us with strong compile-time guarantees that 
 our implementation won't drift away from the generated docs, and that our system _will do exactly what it says on the tin_.
 
 Let's now look at the two route implementations. In `createNewAcl`, we pass the parsed payload `aclBinding` as an input for `AclValidation.isValid`. 
@@ -292,7 +295,7 @@ The implementation of `listAcls` is equally simple. Here we read from our store,
 Unlike with the `createNewAcl`, we don't expect this endpoint to ever return a `Bad Request`, so we type its error as `Unit`.
 
 Aside from reading and writing to the atomic reference `aclStore`, our ACL handling code here is pretty much pure and side-effect free. However, 
-Tapir models the logic used to interpret the endpoint into an actual route as a function of the followign shape: `I => IO[Either[E, O]`, or more generically `I => F[Either[E, O]`. 
+Tapir models the logic used to interpret the endpoint into an actual route as a function of the following shape: `I => IO[Either[E, O]`, or more generically `I => F[Either[E, O]`. 
 This makes sense, as most read world API endpoints perform some sort of effectful computation such us opening sockets, interacting with a datastore, or reading/writing to disk.
 
 ### Authentication and other common route logic 
@@ -317,11 +320,11 @@ AclEndpoints.createNewAcl.toRoutes { case (apiToken, aclBinding) =>
 }
 ```
 
-This might look okay in a small codebase like ours, but it will probably not fly on a large 
+This might look okay in a small code-base like ours, but it will probably not fly on a large 
 one, as the boilerplate and the nesting of helper functions like `userOrApiError` will increase as 
 our cross-cutting concerns become more complex and involved. 
 
-Lukily, the authors of Tapir have recently come up with a nicer pattern to handle common logic such as 
+Luckily for us, the authors of Tapir have recently come up with a nicer pattern to handle common logic such as 
 authentication and authorisation. This revolves around the notion of partially defined endpoints which can combine 
 an input/output description with some server logic:
 
@@ -358,7 +361,7 @@ the [Server Logic](https://tapir.softwaremill.com/en/v0.16.16/server/logic.html)
 ### Hitting our endpoints
 
 Okay, so we have a couple of endpoints defined and implemented. Now we should probably check that they work as expected.
-One way to do so without having to bind an actual web server to a port is to use http4s DSL and hit our routes programmatically, as we would do in a simple unit test covering only the route logic.
+One way to do so without having to bind an actual web server to a port is to use Http4s DSL and hit our routes programmatically, as we would do in a simple unit test covering only the route logic.
 
 ```scala mdoc:nest:silent
 import cats.effect.IO
@@ -388,7 +391,7 @@ val routes = new AclRoutes(store).combined.orNotFound
 ```
 
 Here we just setup the boilerplate needed to run some HTTP request through our web service:
-We initialise a store and the AclRoutes, and then we compose the two routes
+We initialise a store and the `AclRoutes`, and then we compose the two routes
 above into a single http service which will fallback to a 404 response should it fail to match 
 the incoming request. With some help from the http4s DSL, we can now fire a few requests 
 at our endpoints!
@@ -420,10 +423,10 @@ Hurray! Our endpoints seem to work as expected.
 
 ### Interpreting into an OpenAPI spec
 
-With both endpoint declartion, implementation and testing covered, we are finally ready to look into
-how Tapir helps us writing and maintaining high quality API docs. This is surprisingly straightfoward
+With both endpoint declaration, implementation and testing covered, we are finally ready to look into
+how Tapir helps us writing and maintaining high quality API docs. This is surprisingly straightforward
 as it only involves grouping our endpoint definitions into a sequence and use a simple DSL to build an OpenAPI
-spec: a machine readable specification detailing all the relevant attributes of our endpoints, from the query paramters 
+spec: a machine readable specification detailing all the relevant attributes of our endpoints, from the query parameters
 to the JSON schema of the request/response payloads.
 
 ```scala mdoc:nest
@@ -438,7 +441,7 @@ val openAPISpec = List(
 ```
 
 Notice that the value returned by `toOpenAPI` is a syntax tree modelling an OpenAPI spec. Once computed,
-this syntax tree can be modified and extended using plain scala functions. Most of the times, this is something you will
+this syntax tree can be modified and extended using plain Scala functions. Most of the times, this is something you will
 not need doing, but it can provide a good escape hatch should you need to produce OpenAPI specs in a way that for some reason
 Tapir doesn't support.
 
@@ -452,13 +455,13 @@ println(openAPISpec.toYaml)
 ```
 
 As a format, OpenAPI is agnostic of its presentation. However, several web-based UI tools exist to browse and interact with 
-OpenAPI specs. This is how our endpoints look like when viewed in SwaggerUI, one of the most popular OpenAPI viewer:
+OpenAPI specs. This is how our endpoints look like when viewed in [SwaggerUI](https://editor.swagger.io/), one of the most popular OpenAPI viewer:
 
 ![endpoints see SwaggerUI](https://ibin.co/w800/5jSShLatLQ7N.png)
 
 ### Interpreting into an API client
 
-Autogenerating API docs from our endpoint definitions is great, but it doesn't have to end there; we can be more ambitious and automate more agressively!
+Automatically generating API docs from our endpoint definitions is great, but it doesn't have to end there; we can be more ambitious and automate more aggressively!
 As well as an OpenAPI spec, Tapir can also _interpret_ an endpoint definition into a fully functioning API client:
 
 ```scala mdoc:nest
@@ -478,31 +481,32 @@ class AclClient(apiBaseUrl: Uri, apiToken: String) {
 }
 
 ```
-The snippet above illustrates how to use Tapir to generate HTTP requests for the Sttp client. The `toSttpRequestUnsafe` 
+The snippet above illustrates how to use Tapir to generate HTTP requests for the [Sttp](https://tapir.softwaremill.com/en/latest/client/sttp.html) client. The `toSttpRequestUnsafe` 
 function brought in by the `sttp.tapir.client.sttp` import, takes in two parameters: 
 
 - A `baseUrl` for our API server
 - The endpoint inputs, as specified in the above definition (in this example, a `Touple2` containing the api key and the supplied ACL binding). 
 
 Compared to our previous snippet, where we hit our endpoints using the Http4s DSL, this approach has some significant advantages: 
-the generated Tapir API client neatly abstracts away the details of the HTTP implementation as well as the serialisation format, exposing only a function that maps our API inputs to its outpus. 
+the generated Tapir API client neatly abstracts away the details of the HTTP implementation as well as the serialisation format, exposing only a function that maps our API inputs to its outputs. 
 
 Arguably, working at this level of abstraction is for most engineers preferable than having to be
 bogged down into the details of hand-wiring HTTP requests. Moreover, it is also safer, as it rules out a
-whole class of trivial and yet very frequent programming errors (e.g. mispelling the api key header, omitting part of the ACL JSON payload, etc) while reducing the likelyhood for the client implementation to go out of sync with the server.
+whole class of trivial and yet very frequent programming errors (e.g. misspelling the API key header, omitting part of the 
+ACL JSON payload, etc) while reducing the likelihood for the client implementation to go out of sync with the server.
 
 ### Conclusions
 
-In this post, I have tried to demostrate Tapir's main features by working through the implementation of a REST API 
-for creating and listing Kafka ACLs. We saw how endpoint definitions, expressed as scala types, can drive the 
-implementation of both server side logic while at the same time automatically genrate up-to-date
+In this post, I have tried to demonstrate Tapir's main features by working through the implementation of a REST API 
+for creating and listing Kafka ACLs. We saw how endpoint definitions, expressed as Scala types, can drive the 
+implementation of both server side logic while at the same time automatically generate up-to-date
 API docs, as well as fully functioning API clients.
 
 Now, before you set off to introduce Tapir in your production code-base, please let me also share a few words of warning:
 
 Firstly, despite its increasingly rich set of features and integrations, keep in mind that Tapir is still a relatively 
-young project with only a couple of years of active development under his belt. While it is definitly reaching maturity,
-I would still expect its API to occasionally introduce somes breaking changes, which might make it harder to retrofit 
+young project with only a couple of years of active development under his belt. While it is definitely reaching maturity,
+I would still expect its API to occasionally introduce some breaking changes, which might make it harder to retrofit 
 into a large existing project.
 
 Secondly, like with every software framework, do keep in mind that all the good automation and safety that Tapir brings 
@@ -515,5 +519,6 @@ such as type-level programming, type-class derivation, macros, etc. In other wor
 stay clear from if you are still familiarising with the language.
 
 That said, if you are not put off by either of the above, this might be a price worth paying in exchange for a higher 
-degree of API integration, automation and consistency. I hope I have shared with you some of my enthusiasm for this excellent library, as I genuinely belive it makes building complex, API driven systems at scale easier and safer to 
+degree of API integration, automation and consistency. I hope I have shared with you some of my enthusiasm for this excellent 
+library, as I genuinely believe it makes building complex, API driven systems at scale easier and safer to 
 a remarkable extent. 
