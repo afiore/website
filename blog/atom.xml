@@ -9,11 +9,11 @@
     <logo>https://afiore.github.io/website/img/favicon.ico</logo>
     <rights>Copyright © 2020 Your Name or Your Company Name</rights>
     <entry>
-        <title type="html"><![CDATA[Type driven REST API endpoints using Scala and Tapir]]></title>
+        <title type="html"><![CDATA[Type driven API development using Scala and Tapir]]></title>
         <id>https://afiore.github.io/website/blog/2020/11/02/acls-in-tapir.html</id>
         <link href="https://afiore.github.io/website/blog/2020/11/02/acls-in-tapir.html"/>
         <updated>2020-11-02T06:00:00.000Z</updated>
-        <summary type="html"><![CDATA[<p>In a previous post, I have discussed at length <em>why</em> in order to grow a mature API driven product, we also need a mechanism to keep API documentation and implementations in sync. It’s now time for me to illustrate <em>how</em> such a mechanism might look like i...</p>]]></summary>
+        <summary type="html"><![CDATA[<p>In a previous post, I have discussed at length <em>why</em>, in order to grow a mature API driven product, we need a mechanism to keep API documentation and implementations in sync. It’s now time for me to illustrate <em>how</em> such a mechanism might look like in th...</p>]]></summary>
         <author>
             <name>Andrea Fiore</name>
             <email/>
